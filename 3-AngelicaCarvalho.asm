@@ -1,93 +1,86 @@
 .data
 	pergunta: .asciiz "Digite uma palavra: "
-	palavra: .space 50
-	ehpalidromo: .asciiz "Essa palavra é um palíndromo!"
-	naopalidromo: .asciiz "Essa palavra não é um palindromo!"
+	palavra: .space 100		#array 
+	ehpalindromo: .asciiz "Essa palavra é um palíndromo!"
+	naopalindromo: .asciiz "Essa palavra não é um palindromo!"
+	buffer: .space 100
 .text	
-	#impressão da pergunta
+	
+main:
+
 	li $v0, 4
-	la $a0, pergunta
+	la $a0, pergunta 	#impressão da pergunta
 	syscall
 	
-	#leitura da palavra
+	
 	li $v0,8
-	la $a0, palavra
-	la $a1, 50
+	la $a0, palavra		#leitura da palavra escrita pelo usuário, será armazenado no endereço $a0
+	la $a1, 100
 	syscall
 	
-	la $t0, palavra
+	clear: 
+	la $t1, buffer
 	
-	tamanho:
-	lb $t1, 0($t0)
-	beqz $t1, ok
-	addi $t0, $t0, 1
-	j tamanho
+	jump:
+	addi $a0, $a0, 1
+	j rodar
 	
-	ok:
-		beq $t0, $zero, fim
-		subi $t0, $t0, 1
-		sb $zero 0($t0)
-	fim:
-		li $v0, 10		
-		syscall
-		 	 
-	
-	la $t0, palavra
-	la $t1, palavra
-	addi $t2, $t0, 0		#inverte a frase
-	
-	final:
-		lb $t3, 0($t1)
-		beqz $t3, saia
-		addi $t1, $t1, 1 #soma 1 
-		j final
+	rodar: 
+		lb $t5, ($a0)
+		beq $t5, 0, nulo
+		beq $t5, 10, conferir1
+		bgt $t5, 97, addf
+		j jump 
 		
-	saia: 
-		subi $t1, $t1, 1 #seria o j--
+	addf:
+		sb $t5, ($t1)
+		addi $a0, $a0,1
+		addi $t1, $t1, 1
+		j rodar
 		
-	troca:
+	nulo:
+	j jump
+	
+	
+	
+	#addi $t0, $a0,0 	#salvar a palavra de $a0 em $t0, ao inves de usar MOve, utiliza o addi 
+	
+	#sub $t1, $a0, 1		#ponteiro para o último caractere da palavra
+	
+	
+	conferir1: 
+		sb $zero, ($a0)
+		lb $t2, 0($t0)
 		lb $t3, 0($t1)
-		sb $t3, 0($t2)
+		bne $t2, $t3, passa
+		j negativo
+			passa: jal teste
+			addi $t4, $t4, 1
+			addi $t1, $t1, -1
+			j conferir1
+		j negativo
+		teste:
+		beq $t4, $t1, positivo
 		addi $t1, $t1, -1
-		addi $t2, $t2, 1
-		blt $t2, $t0, troca
-			
-					
-		la $a0, palavra		#faz a comparação 
-		la $a1, palavra
-		jal strcmp		#A execução continua a partir do primeiro comando dentro da função strcmp
-			
-		strcmp:
-			addi $v0, $zero, 0
-		comparar:
-			lb $t1, 0($a0)
-			lb $t2, 0($a1)
-			beqz $t1, finalpalavra
-			beq $t1, $t2, proxima
-			sub $v0, $t1, $t2
-			j finalpalavra
-			
-			proxima:
-			addi $a0, $a0, 1
-			addi $a1, $a1, 1
-			j comparar
-			
-			finalpalavra:
-			jr $ra
-			
-			beq $v0, $zero, ehpalidromo
-			li $v0, 4
-			la $a0, naopalidromo
-			syscall
-			j fim		#ta la no inicio esse fim
-			
-			#ehpalidromo: 
-				#li $v0, 4
-				#la $a0, ehpalidromo
-				#syscall
-				#j fim
-			
-			#palidromo = palindromo 
-			
-			
-			
+		beq $t4, $t1, positivo
+		addi $t1, $t1, 1
+		#subi $t1, $t1, 1		#conferindo se o primeiro e ultimo caracter são iguais
+		#bgez $t1, conferir
+		jr $ra
+		
+	palindromoSaidas:
+	
+	positivo:
+		li $v0,4
+		la $a0, ehpalindromo
+		syscall
+		j fimprograma
+	negativo:
+		li $v0, 4
+		la $a0, naopalindromo
+		syscall
+		j fimprograma
+		
+		fimprograma:
+		li $v0, 10
+		syscall
